@@ -23,7 +23,9 @@
                         brand: {
                             dark: '#0f172a',
                             light: '#1e293b',
-                            accent: '#3b82f6'
+                            accent: '#3b82f6',
+                            success: '#10b981',
+                            danger: '#ef4444'
                         }
                     }
                 }
@@ -39,31 +41,27 @@
         .timer-active {
             animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         [v-cloak] { display: none; }
-        
-        /* Classe utilitária para os cards de stats na home */
-        .stat-pill {
-            @apply flex flex-col items-center justify-center p-2 rounded bg-gray-50 border border-gray-100;
-        }
-        .stat-label {
-            @apply text-[10px] uppercase tracking-wider text-gray-500 font-semibold;
-        }
-        .stat-value {
-            @apply text-sm font-bold text-gray-800;
-        }
     </style>
 </head>
-<body class="bg-gray-100 text-slate-800 font-sans min-h-screen">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-    <div id="app" v-cloak class="min-h-screen flex flex-col">
+    <div id="app" v-cloak class="min-h-screen flex flex-col relative">
         
         <!-- Header -->
-        <header class="bg-brand-dark text-white p-4 shadow-md sticky top-0 z-10">
+        <header class="bg-brand-dark text-white p-4 shadow-lg sticky top-0 z-20">
             <div class="container mx-auto flex justify-between items-center max-w-lg">
-                <h1 class="text-xl font-bold flex items-center gap-2">
+                <h1 class="text-xl font-bold flex items-center gap-2 tracking-wide">
                     <i class="fa-solid fa-clock text-brand-accent"></i> Ponto Eletrônico
                 </h1>
-                <div v-if="currentUser" class="text-sm opacity-80 cursor-pointer hover:opacity-100 transition flex items-center gap-2" @click="logout">
+                <div v-if="currentUser" class="text-sm opacity-80 cursor-pointer hover:opacity-100 transition flex items-center gap-2 px-3 py-1 rounded hover:bg-white/10" @click="logout">
                     <span>Sair</span>
                     <i class="fa-solid fa-sign-out-alt"></i>
                 </div>
@@ -71,72 +69,72 @@
         </header>
 
         <!-- Conteúdo Principal -->
-        <main class="flex-grow container mx-auto p-4 max-w-lg flex flex-col justify-center">
+        <main class="flex-grow container mx-auto p-4 max-w-lg flex flex-col justify-center pb-20">
             
             <!-- TELA 1: Seleção de Usuário com Estatísticas -->
             <div v-if="!currentUser" class="flex flex-col gap-6 animate-fade-in py-4">
-                <h2 class="text-center text-gray-500 font-medium mb-2">Selecione seu perfil para entrar</h2>
+                <h2 class="text-center text-slate-500 font-medium mb-2">Selecione seu perfil para entrar</h2>
                 
                 <!-- Card Pedro -->
                 <div @click="selectUser('Pedro')" 
-                     class="group bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-                    <div class="p-6 flex items-center gap-4 border-b border-gray-100">
-                        <div class="h-14 w-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-bold">
+                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                    <div class="p-6 flex items-center gap-4 border-b border-slate-100">
+                        <div class="h-14 w-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-bold border border-blue-100">
                             <i class="fa-solid fa-user"></i>
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">Sou o Pedro</h3>
-                            <p class="text-xs text-gray-500">Clique para registrar ponto</p>
+                            <h3 class="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">Sou o Pedro</h3>
+                            <p class="text-xs text-slate-500">Clique para registrar ponto</p>
                         </div>
                     </div>
                     <!-- Stats Preview -->
-                    <div class="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/50">
+                    <div class="grid grid-cols-3 divide-x divide-slate-100 bg-slate-50/50">
                         <div class="p-3 text-center">
-                            <div class="text-[10px] text-gray-400 uppercase font-bold">Hoje</div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Hoje</div>
                             <div class="text-sm font-bold text-blue-600">{{ getStatsForUser('Pedro').today }}</div>
                         </div>
                         <div class="p-3 text-center">
-                            <div class="text-[10px] text-gray-400 uppercase font-bold">Semana</div>
-                            <div class="text-sm font-bold text-gray-700">{{ getStatsForUser('Pedro').week }}</div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Semana</div>
+                            <div class="text-sm font-bold text-slate-700">{{ getStatsForUser('Pedro').week }}</div>
                         </div>
                         <div class="p-3 text-center">
-                            <div class="text-[10px] text-gray-400 uppercase font-bold">Mês</div>
-                            <div class="text-sm font-bold text-gray-700">{{ getStatsForUser('Pedro').month }}</div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Mês</div>
+                            <div class="text-sm font-bold text-slate-700">{{ getStatsForUser('Pedro').month }}</div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Card Vinicius -->
                 <div @click="selectUser('Vinicius')" 
-                     class="group bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-indigo-500 cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-                    <div class="p-6 flex items-center gap-4 border-b border-gray-100">
-                        <div class="h-14 w-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl font-bold">
+                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                    <div class="p-6 flex items-center gap-4 border-b border-slate-100">
+                        <div class="h-14 w-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-bold border border-indigo-100">
                             <i class="fa-solid fa-user-astronaut"></i>
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">Sou o Vinicius</h3>
-                            <p class="text-xs text-gray-500">Clique para registrar ponto</p>
+                            <h3 class="text-xl font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">Sou o Vinicius</h3>
+                            <p class="text-xs text-slate-500">Clique para registrar ponto</p>
                         </div>
                     </div>
                      <!-- Stats Preview -->
-                     <div class="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/50">
+                     <div class="grid grid-cols-3 divide-x divide-slate-100 bg-slate-50/50">
                         <div class="p-3 text-center">
-                            <div class="text-[10px] text-gray-400 uppercase font-bold">Hoje</div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Hoje</div>
                             <div class="text-sm font-bold text-indigo-600">{{ getStatsForUser('Vinicius').today }}</div>
                         </div>
                         <div class="p-3 text-center">
-                            <div class="text-[10px] text-gray-400 uppercase font-bold">Semana</div>
-                            <div class="text-sm font-bold text-gray-700">{{ getStatsForUser('Vinicius').week }}</div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Semana</div>
+                            <div class="text-sm font-bold text-slate-700">{{ getStatsForUser('Vinicius').week }}</div>
                         </div>
                         <div class="p-3 text-center">
-                            <div class="text-[10px] text-gray-400 uppercase font-bold">Mês</div>
-                            <div class="text-sm font-bold text-gray-700">{{ getStatsForUser('Vinicius').month }}</div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Mês</div>
+                            <div class="text-sm font-bold text-slate-700">{{ getStatsForUser('Vinicius').month }}</div>
                         </div>
                     </div>
                 </div>
 
-                <div v-if="isLoading" class="text-center text-xs text-gray-400 mt-4">
-                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Carregando registros...
+                <div v-if="isLoading" class="text-center text-xs text-slate-400 mt-4">
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Sincronizando dados...
                 </div>
             </div>
 
@@ -144,93 +142,150 @@
             <div v-else class="space-y-6 animate-fade-in">
                 
                 <!-- Saudação -->
-                <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-brand-accent flex justify-between items-center">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
                     <div>
-                        <p class="text-sm text-gray-500">Logado como</p>
-                        <h2 class="text-2xl font-bold text-gray-800">{{ currentUser }}</h2>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Olá,</p>
+                        <h2 class="text-2xl font-bold text-slate-800">{{ currentUser }}</h2>
                     </div>
-                    <div class="h-10 w-10 rounded-full bg-brand-light text-white flex items-center justify-center font-bold text-xl shadow-md">
+                    <div class="h-12 w-12 rounded-full bg-brand-light text-white flex items-center justify-center font-bold text-xl shadow-lg ring-2 ring-brand-accent/20">
                         {{ currentUser.charAt(0) }}
                     </div>
                 </div>
 
                 <!-- CRONÔMETRO -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 text-center relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-1 bg-gray-100">
-                        <div v-if="isTimerRunning" class="h-full bg-green-500 animate-pulse"></div>
+                <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-8 text-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-slate-100">
+                        <div v-if="isTimerRunning" class="h-full bg-brand-success animate-pulse"></div>
                     </div>
                     
-                    <div class="text-gray-500 font-medium mb-2 uppercase tracking-wide text-xs mt-2">Tempo Atual</div>
-                    <div class="text-6xl font-mono font-bold mb-8 text-slate-800 transition-colors duration-300" :class="{'text-green-600 timer-active': isTimerRunning}">
+                    <div class="text-slate-400 font-bold mb-2 uppercase tracking-widest text-[10px] mt-2">Duração da Sessão</div>
+                    <div class="text-7xl font-mono font-bold mb-10 text-slate-800 tracking-tighter transition-colors duration-300" :class="{'text-brand-success timer-active': isTimerRunning}">
                         {{ formattedTime }}
                     </div>
 
                     <button 
-                        @click="toggleTimer"
-                        :class="isTimerRunning ? 'bg-red-500 hover:bg-red-600 ring-red-200' : 'bg-green-500 hover:bg-green-600 ring-green-200'"
-                        class="w-full py-4 rounded-xl text-white text-xl font-bold shadow-lg transition-all transform active:scale-95 ring-4 ring-opacity-50 flex items-center justify-center gap-3">
+                        @click="handleMainButtonClick"
+                        :class="isTimerRunning ? 'bg-brand-danger hover:bg-red-600 ring-red-200 shadow-red-200' : 'bg-brand-success hover:bg-green-600 ring-green-200 shadow-green-200'"
+                        class="w-full py-5 rounded-xl text-white text-xl font-bold shadow-xl transition-all transform active:scale-[0.98] ring-4 ring-opacity-50 flex items-center justify-center gap-3">
                         <i :class="isTimerRunning ? 'fa-solid fa-stop' : 'fa-solid fa-play'"></i>
                         <span>{{ isTimerRunning ? 'PARAR TRABALHO' : 'INICIAR TRABALHO' }}</span>
                     </button>
                     
-                    <p v-if="isTimerRunning" class="mt-3 text-xs text-gray-400">
-                        Iniciado às <span class="font-mono text-gray-600">{{ formatHour(startTime) }}</span>
+                    <p v-if="isTimerRunning" class="mt-4 text-xs text-slate-400 flex items-center justify-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-brand-success animate-pulse"></span>
+                        Iniciado às <span class="font-mono text-slate-600 font-medium">{{ formatHour(startTime) }}</span>
                     </p>
                 </div>
 
-                <!-- CARDS DE ESTATÍSTICAS (DASHBOARD) -->
+                <!-- CARDS DE ESTATÍSTICAS (ESTILIZADOS) -->
                 <div class="grid grid-cols-3 gap-3">
-                    <div class="stat-pill bg-white shadow-sm border-l-2 border-brand-accent">
-                        <div class="stat-label">Hoje</div>
-                        <div class="stat-value">{{ currentStats.today }}</div>
+                    <!-- Hoje -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 relative overflow-hidden group hover:border-blue-200 transition-colors">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+                        <div class="text-blue-500 mb-1 opacity-80 group-hover:scale-110 transition-transform"><i class="fa-solid fa-calendar-day"></i></div>
+                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Hoje</div>
+                        <div class="text-lg font-bold text-slate-700">{{ currentStats.today }}</div>
                     </div>
-                    <div class="stat-pill bg-white shadow-sm">
-                        <div class="stat-label">Semana</div>
-                        <div class="stat-value">{{ currentStats.week }}</div>
+                    
+                    <!-- Semana -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 relative overflow-hidden group hover:border-purple-200 transition-colors">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-purple-500"></div>
+                        <div class="text-purple-500 mb-1 opacity-80 group-hover:scale-110 transition-transform"><i class="fa-solid fa-calendar-week"></i></div>
+                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Semana</div>
+                        <div class="text-lg font-bold text-slate-700">{{ currentStats.week }}</div>
                     </div>
-                    <div class="stat-pill bg-white shadow-sm">
-                        <div class="stat-label">Mês</div>
-                        <div class="stat-value">{{ currentStats.month }}</div>
+                    
+                    <!-- Mês -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 relative overflow-hidden group hover:border-orange-200 transition-colors">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
+                        <div class="text-orange-500 mb-1 opacity-80 group-hover:scale-110 transition-transform"><i class="fa-regular fa-calendar"></i></div>
+                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Mês</div>
+                        <div class="text-lg font-bold text-slate-700">{{ currentStats.month }}</div>
                     </div>
                 </div>
 
-                <!-- HISTÓRICO RECENTE -->
-                <div class="bg-white rounded-lg shadow overflow-hidden">
-                    <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                        <h3 class="text-sm font-semibold text-gray-700 uppercase">Seus Últimos Registros</h3>
+                <!-- HISTÓRICO RECENTE COM DESCRIÇÃO -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul"></i> Atividades Recentes
+                        </h3>
                     </div>
                     
-                    <ul class="divide-y divide-gray-100 max-h-52 overflow-y-auto">
-                        <li v-for="log in sortedLogs" :key="log.id" class="p-4 hover:bg-gray-50 transition flex justify-between items-center group">
-                            <div>
-                                <div class="font-medium text-gray-800 text-sm flex items-center gap-2">
-                                    <i class="fa-regular fa-calendar text-gray-400 text-xs"></i> {{ formatDate(log.startTime) }}
+                    <ul class="divide-y divide-slate-50 max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <li v-for="log in sortedLogs" :key="log.id" class="p-4 hover:bg-slate-50 transition group">
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="font-medium text-slate-700 text-sm flex items-center gap-2">
+                                    <span class="text-slate-400 text-xs"><i class="fa-regular fa-clock"></i></span>
+                                    {{ formatDate(log.startTime) }}
+                                    <span class="text-slate-300 text-xs mx-1">|</span>
+                                    <span class="text-slate-500 text-xs">{{ formatHour(log.startTime) }} - {{ formatHour(log.endTime) }}</span>
                                 </div>
-                                <div class="text-xs text-gray-500 mt-1">
-                                    {{ formatHour(log.startTime) }} - {{ formatHour(log.endTime) }}
+                                <div class="font-mono font-bold text-xs text-brand-accent bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
+                                    {{ formatDuration(log.duration) }}
                                 </div>
                             </div>
-                            <div class="font-mono font-bold text-xs text-brand-accent bg-blue-50 px-2 py-1 rounded group-hover:bg-blue-100 transition">
-                                {{ formatDuration(log.duration) }}
+                            
+                            <!-- Exibição da Descrição -->
+                            <div v-if="log.description" class="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 italic">
+                                "{{ log.description }}"
+                            </div>
+                            <div v-else class="mt-1 text-xs text-slate-300 italic">
+                                Sem descrição
                             </div>
                         </li>
-                        <li v-if="sortedLogs.length === 0" class="p-8 text-center text-gray-400 text-sm flex flex-col items-center gap-2">
-                            <i class="fa-regular fa-folder-open text-2xl opacity-30"></i>
-                            Nenhum registro encontrado.
+                        
+                        <li v-if="sortedLogs.length === 0" class="py-10 text-center text-slate-400 text-sm flex flex-col items-center gap-3">
+                            <div class="bg-slate-50 p-4 rounded-full">
+                                <i class="fa-regular fa-folder-open text-2xl opacity-40"></i>
+                            </div>
+                            <p>Nenhuma atividade registrada ainda.</p>
                         </li>
                     </ul>
                 </div>
             </div>
         </main>
 
-        <footer class="text-center p-4 text-[10px] text-gray-400 bg-gray-50 border-t border-gray-200">
-            &copy; 2025 Sistema de Ponto v1.2
+        <footer class="text-center p-6 text-[10px] text-slate-400 border-t border-slate-200 mt-auto">
+            &copy; 2025 Sistema de Ponto v1.3 • Desenvolvido com Vue.js & Firebase
         </footer>
+
+        <!-- MODAL DE PARADA -->
+        <div v-if="showStopModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+                <div class="bg-brand-light p-4 flex items-center gap-3 text-white">
+                    <i class="fa-solid fa-pen-to-square text-brand-accent"></i>
+                    <h3 class="font-bold">O que foi feito?</h3>
+                </div>
+                
+                <div class="p-6">
+                    <p class="text-sm text-slate-500 mb-3">Descreva brevemente a atividade realizada nesta sessão.</p>
+                    <textarea 
+                        v-model="workDescription"
+                        placeholder="Ex: Correção de bugs na home, Reunião de alinhamento..."
+                        class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700 text-sm resize-none h-24 mb-1"
+                        autofocus
+                    ></textarea>
+                    <div class="text-right text-xs text-slate-400 mb-4" :class="{'text-red-400': workDescription.length > 200}">
+                        {{ workDescription.length }}/200
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button @click="cancelStop" class="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">
+                            Voltar
+                        </button>
+                        <button @click="confirmStop" class="flex-1 py-3 px-4 bg-brand-accent text-white font-bold rounded-xl hover:bg-blue-600 shadow-lg shadow-blue-200 transition">
+                            Salvar e Parar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- TOAST NOTIFICATION -->
         <div v-if="toast.show" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-medium z-50 transition-all duration-300 flex items-center gap-3 min-w-[300px] justify-center"
-             :class="toast.type === 'error' ? 'bg-red-500' : 'bg-slate-800'">
-            <i :class="toast.type === 'error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-check-circle'"></i>
+             :class="toast.type === 'error' ? 'bg-brand-danger' : 'bg-brand-dark'">
+            <i :class="toast.type === 'error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-check-circle text-brand-success'"></i>
             {{ toast.message }}
         </div>
     </div>
@@ -238,7 +293,7 @@
     <!-- Firebase e App Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
         // =========================================================================
@@ -270,14 +325,18 @@
                 const startTime = ref(null);
                 const elapsedTime = ref(0);
                 const timerInterval = ref(null);
-                const logs = ref([]); // Armazena TODOS os logs
+                const logs = ref([]); 
                 const isLoading = ref(true);
                 const toast = ref({ show: false, message: '', type: 'success' });
+                
+                // Estados do Modal
+                const showStopModal = ref(false);
+                const workDescription = ref('');
 
                 // Computed: Tempo do timer
                 const formattedTime = computed(() => formatDuration(elapsedTime.value));
 
-                // Computed: Logs filtrados apenas para o usuário logado (dashboard)
+                // Computed: Logs filtrados
                 const sortedLogs = computed(() => {
                     if (!currentUser.value) return [];
                     return logs.value
@@ -285,23 +344,20 @@
                         .sort((a, b) => b.startTime - a.startTime);
                 });
 
-                // Computed: Stats do usuário LOGADO
+                // Computed: Stats
                 const currentStats = computed(() => {
                     return currentUser.value ? getStatsForUser(currentUser.value) : { today: '0m', week: '0m', month: '0m' };
                 });
 
-                // Função auxiliar: Calcula estatísticas para QUALQUER usuário
+                // Helpers
                 const getStatsForUser = (username) => {
-                    // Filtra logs deste usuário específico
                     const userLogs = logs.value.filter(l => l.user === username);
-                    
                     const now = new Date();
                     let todaySecs = 0, weekSecs = 0, monthSecs = 0;
 
                     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
                     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
                     
-                    // Início da Semana (Domingo)
                     const dayOfWeek = now.getDay();
                     const startOfWeek = new Date(now);
                     startOfWeek.setDate(now.getDate() - dayOfWeek);
@@ -321,7 +377,6 @@
                     };
                 };
 
-                // Actions
                 const selectUser = (user) => {
                     currentUser.value = user;
                     localStorage.setItem('ponto_user', user);
@@ -359,13 +414,28 @@
                 const formatDate = (timestamp) => new Date(timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                 const formatHour = (timestamp) => timestamp ? new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
 
-                // Timer Logic
-                const toggleTimer = async () => {
+                // ==========================
+                // LÓGICA DO TIMER & MODAL
+                // ==========================
+                
+                const handleMainButtonClick = () => {
                     if (!isTimerRunning.value) {
+                        // Iniciar
                         startTimerLogic(Date.now());
                     } else {
-                        stopTimerLogic();
+                        // Parar -> Abre Modal
+                        workDescription.value = ''; // Limpa anterior
+                        showStopModal.value = true;
                     }
+                };
+
+                const cancelStop = () => {
+                    showStopModal.value = false;
+                };
+
+                const confirmStop = () => {
+                    showStopModal.value = false;
+                    stopTimerLogic(workDescription.value);
                 };
 
                 const startTimerLogic = (startTimestamp) => {
@@ -378,7 +448,7 @@
                     }, 1000);
                 };
 
-                const stopTimerLogic = async () => {
+                const stopTimerLogic = async (descriptionText = "") => {
                     const endTime = Date.now();
                     const finalDuration = Math.floor((endTime - startTime.value) / 1000);
                     
@@ -393,19 +463,19 @@
                     }
 
                     try {
-                        // Optimistic UI Update (opcional, mas o onSnapshot já resolve rápido)
                         await addDoc(collection(db, "time_logs"), {
                             user: currentUser.value,
                             startTime: startTime.value,
                             endTime: endTime,
                             duration: finalDuration,
+                            description: descriptionText, // Salva a descrição
                             createdAt: serverTimestamp()
                         });
-                        showToast("Ponto salvo! Bom descanso.");
+                        showToast("Registro salvo com sucesso!");
                         elapsedTime.value = 0;
                     } catch (e) {
                         console.error(e);
-                        showToast("Erro ao salvar. Verifique a internet.", "error");
+                        showToast("Erro ao salvar. Tente novamente.", "error");
                     }
                 };
 
@@ -423,10 +493,7 @@
                     }
                 };
 
-                // Inicialização Global (Busca dados para todos)
                 onMounted(() => {
-                    // Busca todos os logs assim que o app carrega
-                    // Ordenamos por data aqui, mas o sort do JavaScript no computed property garante a ordem na tela
                     onSnapshot(collection(db, "time_logs"), (snapshot) => {
                         logs.value = snapshot.docs.map(doc => ({
                             id: doc.id,
@@ -434,20 +501,19 @@
                         }));
                         isLoading.value = false;
                     }, (error) => {
-                        console.error("Erro ao conectar Firestore:", error);
+                        console.error("Erro no Firestore:", error);
                         isLoading.value = false;
                     });
 
-                    // Se já tiver user no localStorage, recupera estado do timer
-                    if (currentUser.value) {
-                        checkRecovery();
-                    }
+                    if (currentUser.value) checkRecovery();
                 });
 
                 return {
                     currentUser, isTimerRunning, formattedTime, sortedLogs, currentStats,
-                    selectUser, logout, toggleTimer, startTime, isLoading,
-                    formatDate, formatHour, formatDuration, toast, getStatsForUser
+                    selectUser, logout, handleMainButtonClick, startTime, isLoading,
+                    formatDate, formatHour, formatDuration, toast, getStatsForUser,
+                    // Modal
+                    showStopModal, workDescription, cancelStop, confirmStop
                 };
             }
         }).mount('#app');
