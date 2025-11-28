@@ -49,6 +49,10 @@
             to { opacity: 1; transform: translateY(0); }
         }
         [v-cloak] { display: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
@@ -150,7 +154,7 @@
                 </div>
 
                 <div v-if="isLoading" class="text-center text-xs text-slate-400 mt-4">
-                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Sincronizando dados...
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> A sincronizar dados...
                 </div>
             </div>
 
@@ -200,7 +204,7 @@
                     </p>
                 </div>
 
-                <!-- CARDS DE ESTATÍSTICAS (ESTILIZADOS) -->
+                <!-- CARDS DE ESTATÍSTICAS -->
                 <div class="grid grid-cols-3 gap-3">
                     <!-- Hoje -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 relative overflow-hidden group hover:border-blue-200 transition-colors">
@@ -270,7 +274,7 @@
         </main>
 
         <footer class="text-center p-6 text-[10px] text-slate-400 border-t border-slate-200 mt-auto">
-            &copy; 2025 Sistema de Ponto v1.3 • Desenvolvido com Vue.js & Firebase
+            &copy; 2025 Sistema de Ponto v1.4 • Desenvolvido com Vue.js & Firebase
         </footer>
 
         <!-- MODAL DE PARADA -->
@@ -316,7 +320,6 @@
     <!-- Firebase e App Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        // ADICIONADO: doc, setDoc para gerenciar status em tempo real
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
@@ -339,7 +342,7 @@
 
         signInAnonymously(auth).catch((error) => console.error("Auth Error:", error));
 
-        const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+        const { createApp, ref, computed, onMounted, watch } = Vue;
 
         createApp({
             setup() {
@@ -352,7 +355,7 @@
                 const logs = ref([]); 
                 const isLoading = ref(true);
                 const toast = ref({ show: false, message: '', type: 'success' });
-                const userStatuses = ref({}); // NOVO: Armazena status de todos os usuários
+                const userStatuses = ref({}); // Status de todos
                 
                 // Estados do Modal
                 const showStopModal = ref(false);
@@ -374,7 +377,7 @@
                     return currentUser.value ? getStatsForUser(currentUser.value) : { today: '0m', week: '0m', month: '0m' };
                 });
 
-                // Helpers
+                // Helpers de estatísticas
                 const getStatsForUser = (username) => {
                     const userLogs = logs.value.filter(l => l.user === username);
                     const now = new Date();
@@ -402,7 +405,6 @@
                     };
                 };
 
-                // NOVO: Verifica se um usuário está trabalhando (baseado no Firestore)
                 const isUserWorking = (username) => {
                     return userStatuses.value[username]?.isWorking === true;
                 };
@@ -410,16 +412,17 @@
                 const selectUser = (user) => {
                     currentUser.value = user;
                     localStorage.setItem('ponto_user', user);
-                    checkRecovery();
+                    syncTimerFromCloud(); // Sincroniza imediatamente ao logar
                 };
 
                 const logout = () => {
-                    if (isTimerRunning.value) {
-                        showToast("Pare o trabalho antes de sair!", "error");
-                        return;
-                    }
+                    // Nota: Não forçamos parar o timer no logout para permitir troca de device
                     currentUser.value = null;
                     localStorage.removeItem('ponto_user');
+                    // Para o timer local visualmente, mas o status remoto continua true
+                    if (timerInterval.value) clearInterval(timerInterval.value);
+                    isTimerRunning.value = false;
+                    elapsedTime.value = 0;
                 };
 
                 const showToast = (msg, type = 'success') => {
@@ -445,23 +448,19 @@
                 const formatHour = (timestamp) => timestamp ? new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
 
                 // ==========================
-                // LÓGICA DO TIMER & MODAL
+                // LÓGICA DO TIMER
                 // ==========================
                 
                 const handleMainButtonClick = () => {
                     if (!isTimerRunning.value) {
-                        // Iniciar
                         startTimerLogic(Date.now());
                     } else {
-                        // Parar -> Abre Modal
-                        workDescription.value = ''; // Limpa anterior
+                        workDescription.value = ''; 
                         showStopModal.value = true;
                     }
                 };
 
-                const cancelStop = () => {
-                    showStopModal.value = false;
-                };
+                const cancelStop = () => showStopModal.value = false;
 
                 const confirmStop = () => {
                     showStopModal.value = false;
@@ -469,26 +468,31 @@
                 };
 
                 const updateRemoteStatus = async (working, startTimestamp = null) => {
+                    if (!currentUser.value) return;
                     try {
-                        // Salva na coleção 'status', documento com o nome do usuário
-                        // Isso permite que a tela inicial saiba quem está trabalhando
                         await setDoc(doc(db, "status", currentUser.value), {
                             isWorking: working,
                             startTime: startTimestamp,
                             lastUpdate: serverTimestamp()
                         });
                     } catch (e) {
-                        console.error("Erro ao atualizar status remoto:", e);
+                        console.error("Erro status:", e);
                     }
                 };
 
                 const startTimerLogic = (startTimestamp) => {
+                    // Evita iniciar se já estiver rodando
+                    if (isTimerRunning.value && startTime.value === startTimestamp) return;
+
                     isTimerRunning.value = true;
                     startTime.value = startTimestamp;
-                    localStorage.setItem(`ponto_start_${currentUser.value}`, startTimestamp);
                     
-                    // Atualiza status remoto
+                    // Backup local + Atualização Remota
+                    localStorage.setItem(`ponto_start_${currentUser.value}`, startTimestamp);
                     updateRemoteStatus(true, startTimestamp);
+
+                    // Limpa intervalo anterior se existir
+                    if (timerInterval.value) clearInterval(timerInterval.value);
 
                     timerInterval.value = setInterval(() => {
                         elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
@@ -502,13 +506,13 @@
                     clearInterval(timerInterval.value);
                     localStorage.removeItem(`ponto_start_${currentUser.value}`);
                     isTimerRunning.value = false;
+                    elapsedTime.value = 0;
                     
-                    // Atualiza status remoto para PARADO
+                    // Avisa nuvem que parou
                     updateRemoteStatus(false, null);
 
                     if (finalDuration < 5) {
-                        showToast("Tempo muito curto (< 5s). Não salvo.", "error");
-                        elapsedTime.value = 0;
+                        showToast("Tempo muito curto (< 5s).", "error");
                         return;
                     }
 
@@ -518,61 +522,66 @@
                             startTime: startTime.value,
                             endTime: endTime,
                             duration: finalDuration,
-                            description: descriptionText, // Salva a descrição
+                            description: descriptionText,
                             createdAt: serverTimestamp()
                         });
-                        showToast("Registro salvo com sucesso!");
-                        elapsedTime.value = 0;
+                        showToast("Salvo com sucesso!");
                     } catch (e) {
                         console.error(e);
-                        showToast("Erro ao salvar. Tente novamente.", "error");
+                        showToast("Erro ao salvar.", "error");
                     }
                 };
 
-                const checkRecovery = () => {
+                // Lógica de Sincronização Multi-Device
+                const syncTimerFromCloud = () => {
                     if (!currentUser.value) return;
-                    const savedStart = localStorage.getItem(`ponto_start_${currentUser.value}`);
-                    if (savedStart) {
-                        const start = parseInt(savedStart);
-                        startTimerLogic(start);
-                        elapsedTime.value = Math.floor((Date.now() - start) / 1000);
+                    
+                    // Verifica status remoto
+                    const status = userStatuses.value[currentUser.value];
+                    
+                    if (status && status.isWorking && status.startTime) {
+                        // Se nuvem diz que está trabalhando, força timer local a rodar
+                        if (!isTimerRunning.value || startTime.value !== status.startTime) {
+                            console.log("Sincronizando timer da nuvem...");
+                            startTimerLogic(status.startTime);
+                        }
                     } else {
-                        isTimerRunning.value = false;
-                        elapsedTime.value = 0;
-                        if (timerInterval.value) clearInterval(timerInterval.value);
+                        // Se nuvem diz que NÃO está trabalhando, e localmente estava, devemos parar?
+                        // Melhor não parar abruptamente para evitar conflitos de rede, 
+                        // mas se o usuário acabou de abrir a página, garante que está parado.
+                        if (!isTimerRunning.value) {
+                             // Tudo certo, já está parado
+                        }
                     }
                 };
 
                 onMounted(() => {
-                    // Listener para Logs
+                    // Logs
                     onSnapshot(collection(db, "time_logs"), (snapshot) => {
-                        logs.value = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        }));
-                        isLoading.value = false;
-                    }, (error) => {
-                        console.error("Erro no Firestore (Logs):", error);
+                        logs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         isLoading.value = false;
                     });
 
-                    // NOVO Listener para Status em Tempo Real
+                    // Status Realtime
                     onSnapshot(collection(db, "status"), (snapshot) => {
                         const statuses = {};
-                        snapshot.forEach(doc => {
-                            statuses[doc.id] = doc.data();
-                        });
+                        snapshot.forEach(doc => statuses[doc.id] = doc.data());
                         userStatuses.value = statuses;
-                    }, (error) => console.error("Erro no Firestore (Status):", error));
-
-                    if (currentUser.value) checkRecovery();
+                        
+                        // Sempre que o status mudar na nuvem, tenta sincronizar o timer local
+                        if (currentUser.value) syncTimerFromCloud();
+                    });
+                });
+                
+                // Observa mudança de usuário para tentar sincronizar
+                watch(currentUser, () => {
+                    syncTimerFromCloud();
                 });
 
                 return {
                     currentUser, isTimerRunning, formattedTime, sortedLogs, currentStats,
                     selectUser, logout, handleMainButtonClick, startTime, isLoading,
                     formatDate, formatHour, formatDuration, toast, getStatsForUser, isUserWorking,
-                    // Modal
                     showStopModal, workDescription, cancelStop, confirmStop
                 };
             }
