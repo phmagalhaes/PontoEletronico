@@ -77,10 +77,18 @@
                 
                 <!-- Card Pedro -->
                 <div @click="selectUser('Pedro')" 
-                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden relative">
+                    
+                     <!-- Status Badge (Pedro) -->
+                    <div v-if="isUserWorking('Pedro')" class="absolute top-0 right-0 bg-brand-success text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
+                        <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span> TRABALHANDO
+                    </div>
+
                     <div class="p-6 flex items-center gap-4 border-b border-slate-100">
-                        <div class="h-14 w-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-bold border border-blue-100">
+                        <div class="h-14 w-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-bold border border-blue-100 relative">
                             <i class="fa-solid fa-user"></i>
+                            <!-- Status Dot Avatar -->
+                            <div v-if="isUserWorking('Pedro')" class="absolute bottom-0 right-0 w-4 h-4 bg-brand-success border-2 border-white rounded-full"></div>
                         </div>
                         <div>
                             <h3 class="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">Sou o Pedro</h3>
@@ -106,10 +114,18 @@
                 
                 <!-- Card Vinicius -->
                 <div @click="selectUser('Vinicius')" 
-                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden relative">
+                    
+                     <!-- Status Badge (Vinicius) -->
+                     <div v-if="isUserWorking('Vinicius')" class="absolute top-0 right-0 bg-brand-success text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
+                        <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span> TRABALHANDO
+                    </div>
+
                     <div class="p-6 flex items-center gap-4 border-b border-slate-100">
-                        <div class="h-14 w-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-bold border border-indigo-100">
+                        <div class="h-14 w-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-bold border border-indigo-100 relative">
                             <i class="fa-solid fa-user-astronaut"></i>
+                            <!-- Status Dot Avatar -->
+                            <div v-if="isUserWorking('Vinicius')" class="absolute bottom-0 right-0 w-4 h-4 bg-brand-success border-2 border-white rounded-full"></div>
                         </div>
                         <div>
                             <h3 class="text-xl font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">Sou o Vinicius</h3>
@@ -145,10 +161,17 @@
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Olá,</p>
-                        <h2 class="text-2xl font-bold text-slate-800">{{ currentUser }}</h2>
+                        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                            {{ currentUser }}
+                            <span v-if="isTimerRunning" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200 animate-pulse">
+                                ● ON
+                            </span>
+                        </h2>
                     </div>
-                    <div class="h-12 w-12 rounded-full bg-brand-light text-white flex items-center justify-center font-bold text-xl shadow-lg ring-2 ring-brand-accent/20">
+                    <div class="h-12 w-12 rounded-full bg-brand-light text-white flex items-center justify-center font-bold text-xl shadow-lg ring-2 ring-brand-accent/20 relative">
                         {{ currentUser.charAt(0) }}
+                        <!-- Dot de Status no Dashboard -->
+                        <div v-if="isTimerRunning" class="absolute bottom-0 right-0 w-3 h-3 bg-brand-success border-2 border-white rounded-full"></div>
                     </div>
                 </div>
 
@@ -293,19 +316,20 @@
     <!-- Firebase e App Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        // ADICIONADO: doc, setDoc para gerenciar status em tempo real
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
         // =========================================================================
         // ÁREA DE CONFIGURAÇÃO (COLE SUAS CHAVES AQUI)
         // =========================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyBaof8kXvK3bcjaauonBQSLCGaaivZN4xU",
-            authDomain: "pontoeletronico-94d81.firebaseapp.com",
-            projectId: "pontoeletronico-94d81",
-            storageBucket: "pontoeletronico-94d81.firebasestorage.app",
-            messagingSenderId: "965066780166",
-            appId: "1:965066780166:web:37320da9bbf313d50edd87"
+            apiKey: "SUA_API_KEY_AQUI",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            projectId: "SEU_PROJECT_ID",
+            storageBucket: "SEU_PROJETO.firebasestorage.app",
+            messagingSenderId: "SEU_MESSAGING_ID",
+            appId: "SEU_APP_ID"
         };
         // =========================================================================
 
@@ -328,6 +352,7 @@
                 const logs = ref([]); 
                 const isLoading = ref(true);
                 const toast = ref({ show: false, message: '', type: 'success' });
+                const userStatuses = ref({}); // NOVO: Armazena status de todos os usuários
                 
                 // Estados do Modal
                 const showStopModal = ref(false);
@@ -375,6 +400,11 @@
                         week: formatStats(weekSecs),
                         month: formatStats(monthSecs)
                     };
+                };
+
+                // NOVO: Verifica se um usuário está trabalhando (baseado no Firestore)
+                const isUserWorking = (username) => {
+                    return userStatuses.value[username]?.isWorking === true;
                 };
 
                 const selectUser = (user) => {
@@ -438,11 +468,28 @@
                     stopTimerLogic(workDescription.value);
                 };
 
+                const updateRemoteStatus = async (working, startTimestamp = null) => {
+                    try {
+                        // Salva na coleção 'status', documento com o nome do usuário
+                        // Isso permite que a tela inicial saiba quem está trabalhando
+                        await setDoc(doc(db, "status", currentUser.value), {
+                            isWorking: working,
+                            startTime: startTimestamp,
+                            lastUpdate: serverTimestamp()
+                        });
+                    } catch (e) {
+                        console.error("Erro ao atualizar status remoto:", e);
+                    }
+                };
+
                 const startTimerLogic = (startTimestamp) => {
                     isTimerRunning.value = true;
                     startTime.value = startTimestamp;
                     localStorage.setItem(`ponto_start_${currentUser.value}`, startTimestamp);
                     
+                    // Atualiza status remoto
+                    updateRemoteStatus(true, startTimestamp);
+
                     timerInterval.value = setInterval(() => {
                         elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
                     }, 1000);
@@ -456,6 +503,9 @@
                     localStorage.removeItem(`ponto_start_${currentUser.value}`);
                     isTimerRunning.value = false;
                     
+                    // Atualiza status remoto para PARADO
+                    updateRemoteStatus(false, null);
+
                     if (finalDuration < 5) {
                         showToast("Tempo muito curto (< 5s). Não salvo.", "error");
                         elapsedTime.value = 0;
@@ -494,6 +544,7 @@
                 };
 
                 onMounted(() => {
+                    // Listener para Logs
                     onSnapshot(collection(db, "time_logs"), (snapshot) => {
                         logs.value = snapshot.docs.map(doc => ({
                             id: doc.id,
@@ -501,9 +552,18 @@
                         }));
                         isLoading.value = false;
                     }, (error) => {
-                        console.error("Erro no Firestore:", error);
+                        console.error("Erro no Firestore (Logs):", error);
                         isLoading.value = false;
                     });
+
+                    // NOVO Listener para Status em Tempo Real
+                    onSnapshot(collection(db, "status"), (snapshot) => {
+                        const statuses = {};
+                        snapshot.forEach(doc => {
+                            statuses[doc.id] = doc.data();
+                        });
+                        userStatuses.value = statuses;
+                    }, (error) => console.error("Erro no Firestore (Status):", error));
 
                     if (currentUser.value) checkRecovery();
                 });
@@ -511,7 +571,7 @@
                 return {
                     currentUser, isTimerRunning, formattedTime, sortedLogs, currentStats,
                     selectUser, logout, handleMainButtonClick, startTime, isLoading,
-                    formatDate, formatHour, formatDuration, toast, getStatsForUser,
+                    formatDate, formatHour, formatDuration, toast, getStatsForUser, isUserWorking,
                     // Modal
                     showStopModal, workDescription, cancelStop, confirmStop
                 };
