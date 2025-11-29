@@ -6,7 +6,6 @@
     <title>Ponto Eletrônico - Time Tracking</title>
 
     <link rel="icon" href="https://www.rw-designer.com/icon-image/21516-256x256x32.png">
-
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,8 +15,10 @@
     
     <!-- Font Awesome (Ícones) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Lodash para Debounce (Salvamento inteligente) -->
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
 
-    <!-- Configuração do Tailwind -->
     <script>
         tailwind.config = {
             theme: {
@@ -28,6 +29,7 @@
                             light: '#1e293b',
                             accent: '#3b82f6',
                             success: '#10b981',
+                            warning: '#f59e0b',
                             danger: '#ef4444'
                         }
                     }
@@ -41,21 +43,21 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.8; }
         }
-        .timer-active {
-            animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .timer-active { animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         [v-cloak] { display: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Estilo de Papel para o Dontpad */
+        .paper-bg {
+            background-color: #fffbeb; /* Amarelo clarinho */
+            background-image: linear-gradient(#f7f2d4 1px, transparent 1px);
+            background-size: 100% 1.5rem;
+            line-height: 1.5rem;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
@@ -76,516 +78,523 @@
         </header>
 
         <!-- Conteúdo Principal -->
-        <main class="flex-grow container mx-auto p-4 max-w-lg flex flex-col justify-center pb-20">
+        <main class="flex-grow container mx-auto p-4 max-w-lg flex flex-col pb-20">
             
-            <!-- TELA 1: Seleção de Usuário com Estatísticas -->
+            <!-- ========================================== -->
+            <!-- TELA 1: SELEÇÃO DE USUÁRIO (HOME)          -->
+            <!-- ========================================== -->
             <div v-if="!currentUser" class="flex flex-col gap-6 animate-fade-in py-4">
-                <h2 class="text-center text-slate-500 font-medium mb-2">Selecione seu perfil para entrar</h2>
+                <h2 class="text-center text-slate-500 font-medium mb-2">Selecione seu perfil</h2>
                 
-                <!-- Card Pedro -->
-                <div @click="selectUser('Pedro')" 
-                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden relative">
+                <!-- Cards de Usuário (Pedro/Vinicius) -->
+                <div v-for="user in ['Pedro', 'Vinicius']" :key="user" @click="selectUser(user)" 
+                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 cursor-pointer transition-all duration-300 relative overflow-hidden">
                     
-                     <!-- Status Badge (Pedro) -->
-                    <div v-if="isUserWorking('Pedro')" class="absolute top-0 right-0 bg-brand-success text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
+                    <!-- Badges de Status -->
+                    <div v-if="isUserWorking(user) && !isUserPaused(user)" class="absolute top-0 right-0 bg-brand-success text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
                         <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span> TRABALHANDO
+                    </div>
+                    <div v-else-if="isUserWorking(user) && isUserPaused(user)" class="absolute top-0 right-0 bg-brand-warning text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
+                        <i class="fa-solid fa-pause"></i> PAUSADO
                     </div>
 
                     <div class="p-6 flex items-center gap-4 border-b border-slate-100">
-                        <div class="h-14 w-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-bold border border-blue-100 relative">
-                            <i class="fa-solid fa-user"></i>
-                            <!-- Status Dot Avatar -->
-                            <div v-if="isUserWorking('Pedro')" class="absolute bottom-0 right-0 w-4 h-4 bg-brand-success border-2 border-white rounded-full"></div>
+                        <div class="h-14 w-14 rounded-full flex items-center justify-center text-2xl font-bold border relative"
+                             :class="user === 'Pedro' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'">
+                            <i :class="user === 'Pedro' ? 'fa-solid fa-user' : 'fa-solid fa-user-astronaut'"></i>
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">Sou o Pedro</h3>
-                            <p class="text-xs text-slate-500">Clique para registrar ponto</p>
+                            <h3 class="text-xl font-bold text-slate-800">{{ user === 'Pedro' ? 'Sou o Pedro' : 'Sou o Vinicius' }}</h3>
+                            <p class="text-xs text-slate-500">Clique para entrar</p>
                         </div>
                     </div>
                     <!-- Stats Preview -->
                     <div class="grid grid-cols-3 divide-x divide-slate-100 bg-slate-50/50">
-                        <div class="p-3 text-center">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Hoje</div>
-                            <div class="text-sm font-bold text-blue-600">{{ getStatsForUser('Pedro').today }}</div>
-                        </div>
-                        <div class="p-3 text-center">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Semana</div>
-                            <div class="text-sm font-bold text-slate-700">{{ getStatsForUser('Pedro').week }}</div>
-                        </div>
-                        <div class="p-3 text-center">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Mês</div>
-                            <div class="text-sm font-bold text-slate-700">{{ getStatsForUser('Pedro').month }}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Card Vinicius -->
-                <div @click="selectUser('Vinicius')" 
-                     class="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 overflow-hidden relative">
-                    
-                     <!-- Status Badge (Vinicius) -->
-                     <div v-if="isUserWorking('Vinicius')" class="absolute top-0 right-0 bg-brand-success text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1">
-                        <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span> TRABALHANDO
-                    </div>
-
-                    <div class="p-6 flex items-center gap-4 border-b border-slate-100">
-                        <div class="h-14 w-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-bold border border-indigo-100 relative">
-                            <i class="fa-solid fa-user-astronaut"></i>
-                            <!-- Status Dot Avatar -->
-                            <div v-if="isUserWorking('Vinicius')" class="absolute bottom-0 right-0 w-4 h-4 bg-brand-success border-2 border-white rounded-full"></div>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">Sou o Vinicius</h3>
-                            <p class="text-xs text-slate-500">Clique para registrar ponto</p>
-                        </div>
-                    </div>
-                     <!-- Stats Preview -->
-                     <div class="grid grid-cols-3 divide-x divide-slate-100 bg-slate-50/50">
-                        <div class="p-3 text-center">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Hoje</div>
-                            <div class="text-sm font-bold text-indigo-600">{{ getStatsForUser('Vinicius').today }}</div>
-                        </div>
-                        <div class="p-3 text-center">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Semana</div>
-                            <div class="text-sm font-bold text-slate-700">{{ getStatsForUser('Vinicius').week }}</div>
-                        </div>
-                        <div class="p-3 text-center">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">Mês</div>
-                            <div class="text-sm font-bold text-slate-700">{{ getStatsForUser('Vinicius').month }}</div>
+                        <div class="p-2 text-center" v-for="(val, label) in getStatsForUser(user)" :key="label">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">{{ label === 'today' ? 'Hoje' : label === 'week' ? 'Semana' : 'Mês' }}</div>
+                            <div class="text-xs font-bold text-slate-700">{{ val }}</div>
                         </div>
                     </div>
                 </div>
 
-                <div v-if="isLoading" class="text-center text-xs text-slate-400 mt-4">
-                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> A sincronizar dados...
+                <!-- DONTPAD GERAL (HOME) -->
+                <div class="mt-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-earth-americas"></i> Mural Geral (Público)
+                    </h3>
+                    <div class="relative">
+                        <textarea 
+                            v-model="generalNote" 
+                            @input="saveGeneralNote"
+                            class="w-full h-40 p-4 rounded-xl border border-slate-200 shadow-sm focus:ring-2 focus:ring-brand-accent focus:border-brand-accent outline-none text-sm text-slate-700 resize-none paper-bg"
+                            placeholder="Escreva avisos gerais aqui..."></textarea>
+                        <div class="absolute bottom-2 right-3 text-[10px] text-slate-400">
+                            <span v-if="savingGeneral"><i class="fa-solid fa-sync fa-spin"></i> Salvando...</span>
+                            <span v-else>Salvo</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- TELA 2: Dashboard do Usuário -->
+            <!-- ========================================== -->
+            <!-- TELA 2: DASHBOARD LOGADO                   -->
+            <!-- ========================================== -->
             <div v-else class="space-y-6 animate-fade-in">
                 
-                <!-- Saudação -->
+                <!-- Header Dashboard -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Olá,</p>
                         <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
                             {{ currentUser }}
-                            <span v-if="isTimerRunning" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200 animate-pulse">
-                                ● ON
-                            </span>
+                            <span v-if="isTimerRunning && !isPaused" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200 animate-pulse">● ON</span>
+                            <span v-else-if="isPaused" class="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full border border-yellow-200"><i class="fa-solid fa-pause"></i> PAUSA</span>
                         </h2>
                     </div>
                     <div class="h-12 w-12 rounded-full bg-brand-light text-white flex items-center justify-center font-bold text-xl shadow-lg ring-2 ring-brand-accent/20 relative">
                         {{ currentUser.charAt(0) }}
-                        <!-- Dot de Status no Dashboard -->
-                        <div v-if="isTimerRunning" class="absolute bottom-0 right-0 w-3 h-3 bg-brand-success border-2 border-white rounded-full"></div>
                     </div>
                 </div>
 
-                <!-- CRONÔMETRO -->
-                <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-8 text-center relative overflow-hidden">
+                <!-- CRONÔMETRO COM PAUSA -->
+                <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 text-center relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-slate-100">
-                        <div v-if="isTimerRunning" class="h-full bg-brand-success animate-pulse"></div>
+                        <div v-if="isTimerRunning && !isPaused" class="h-full bg-brand-success animate-pulse"></div>
+                        <div v-if="isPaused" class="h-full bg-brand-warning w-full"></div>
                     </div>
                     
-                    <div class="text-slate-400 font-bold mb-2 uppercase tracking-widest text-[10px] mt-2">Duração da Sessão</div>
-                    <div class="text-7xl font-mono font-bold mb-10 text-slate-800 tracking-tighter transition-colors duration-300" :class="{'text-brand-success timer-active': isTimerRunning}">
+                    <div class="text-slate-400 font-bold mb-2 uppercase tracking-widest text-[10px] mt-2">
+                        {{ isPaused ? 'EM PAUSA' : 'DURAÇÃO DA SESSÃO' }}
+                    </div>
+                    
+                    <div class="text-6xl font-mono font-bold mb-8 tracking-tighter transition-colors duration-300"
+                         :class="isPaused ? 'text-brand-warning' : (isTimerRunning ? 'text-brand-success' : 'text-slate-800')">
                         {{ formattedTime }}
                     </div>
 
-                    <button 
-                        @click="handleMainButtonClick"
-                        :class="isTimerRunning ? 'bg-brand-danger hover:bg-red-600 ring-red-200 shadow-red-200' : 'bg-brand-success hover:bg-green-600 ring-green-200 shadow-green-200'"
-                        class="w-full py-5 rounded-xl text-white text-xl font-bold shadow-xl transition-all transform active:scale-[0.98] ring-4 ring-opacity-50 flex items-center justify-center gap-3">
-                        <i :class="isTimerRunning ? 'fa-solid fa-stop' : 'fa-solid fa-play'"></i>
-                        <span>{{ isTimerRunning ? 'PARAR TRABALHO' : 'INICIAR TRABALHO' }}</span>
+                    <!-- Botões de Controle -->
+                    <div class="grid grid-cols-2 gap-3" v-if="isTimerRunning || isPaused">
+                        <!-- Botão Pausar/Continuar -->
+                        <button @click="togglePause" 
+                            class="py-4 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-95 flex flex-col items-center justify-center gap-1"
+                            :class="isPaused ? 'bg-brand-success hover:bg-green-600 ring-4 ring-green-200' : 'bg-brand-warning hover:bg-yellow-500 ring-4 ring-yellow-100'">
+                            <i :class="isPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause'"></i>
+                            <span class="text-xs uppercase">{{ isPaused ? 'RETOMAR' : 'PAUSAR' }}</span>
+                        </button>
+
+                        <!-- Botão Parar (Stop) -->
+                        <button @click="handleStopClick" 
+                            class="py-4 rounded-xl font-bold text-white bg-brand-danger hover:bg-red-600 shadow-lg ring-4 ring-red-200 transition-all transform active:scale-95 flex flex-col items-center justify-center gap-1">
+                            <i class="fa-solid fa-stop"></i>
+                            <span class="text-xs uppercase">FINALIZAR</span>
+                        </button>
+                    </div>
+
+                    <!-- Botão Iniciar (Só aparece se parado) -->
+                    <button v-else
+                        @click="handleStartClick"
+                        class="w-full py-5 rounded-xl text-white text-xl font-bold bg-brand-success hover:bg-green-600 ring-4 ring-green-200 shadow-xl transition-all transform active:scale-[0.98] flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-play"></i>
+                        <span>INICIAR TRABALHO</span>
                     </button>
                     
-                    <p v-if="isTimerRunning" class="mt-4 text-xs text-slate-400 flex items-center justify-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-brand-success animate-pulse"></span>
-                        Iniciado às <span class="font-mono text-slate-600 font-medium">{{ formatHour(startTime) }}</span>
+                    <p v-if="isTimerRunning || isPaused" class="mt-4 text-xs text-slate-400">
+                        Início: <span class="font-mono text-slate-600">{{ formatHour(startTime) }}</span>
                     </p>
                 </div>
 
-                <!-- CARDS DE ESTATÍSTICAS -->
-                <div class="grid grid-cols-3 gap-3">
-                    <!-- Hoje -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 relative overflow-hidden group hover:border-blue-200 transition-colors">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
-                        <div class="text-blue-500 mb-1 opacity-80 group-hover:scale-110 transition-transform"><i class="fa-solid fa-calendar-day"></i></div>
-                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Hoje</div>
-                        <div class="text-lg font-bold text-slate-700">{{ currentStats.today }}</div>
+                <!-- ABAS DE BLOCO DE NOTAS -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="flex border-b border-slate-100">
+                        <button @click="activeTab = 'personal'" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors"
+                            :class="activeTab === 'personal' ? 'text-brand-accent bg-blue-50 border-b-2 border-brand-accent' : 'text-slate-400 hover:text-slate-600'">
+                            <i class="fa-solid fa-user-pen mr-1"></i> Meu Bloco
+                        </button>
+                        <button @click="activeTab = 'general'" class="flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors"
+                            :class="activeTab === 'general' ? 'text-brand-accent bg-blue-50 border-b-2 border-brand-accent' : 'text-slate-400 hover:text-slate-600'">
+                            <i class="fa-solid fa-earth-americas mr-1"></i> Mural Geral
+                        </button>
                     </div>
                     
-                    <!-- Semana -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 relative overflow-hidden group hover:border-purple-200 transition-colors">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-purple-500"></div>
-                        <div class="text-purple-500 mb-1 opacity-80 group-hover:scale-110 transition-transform"><i class="fa-solid fa-calendar-week"></i></div>
-                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Semana</div>
-                        <div class="text-lg font-bold text-slate-700">{{ currentStats.week }}</div>
-                    </div>
-                    
-                    <!-- Mês -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 relative overflow-hidden group hover:border-orange-200 transition-colors">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
-                        <div class="text-orange-500 mb-1 opacity-80 group-hover:scale-110 transition-transform"><i class="fa-regular fa-calendar"></i></div>
-                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Mês</div>
-                        <div class="text-lg font-bold text-slate-700">{{ currentStats.month }}</div>
+                    <div class="relative">
+                        <textarea 
+                            v-if="activeTab === 'personal'"
+                            v-model="personalNote" 
+                            @input="savePersonalNote"
+                            class="w-full h-48 p-4 border-none outline-none text-sm text-slate-700 resize-none paper-bg"
+                            placeholder="Anote suas tarefas, pendências ou rascunhos aqui... (Salvo automaticamente)"></textarea>
+                            
+                        <textarea 
+                            v-else
+                            v-model="generalNote" 
+                            @input="saveGeneralNote"
+                            class="w-full h-48 p-4 border-none outline-none text-sm text-slate-700 resize-none paper-bg"
+                            placeholder="Mural de avisos para todos..."></textarea>
+
+                        <div class="absolute bottom-2 right-3 text-[10px] text-slate-400 bg-white/50 px-2 rounded">
+                            <span v-if="(activeTab === 'personal' && savingPersonal) || (activeTab === 'general' && savingGeneral)">
+                                <i class="fa-solid fa-sync fa-spin"></i> Salvando...
+                            </span>
+                            <span v-else>Salvo <i class="fa-solid fa-check"></i></span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- HISTÓRICO RECENTE COM DESCRIÇÃO -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                            <i class="fa-solid fa-list-ul"></i> Atividades Recentes
-                        </h3>
+                <!-- CARDS DE STATS -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-100 text-center" v-for="(val, label) in currentStats" :key="label">
+                        <div class="text-[10px] text-slate-400 uppercase font-bold">{{ label === 'today' ? 'Hoje' : label === 'week' ? 'Semana' : 'Mês' }}</div>
+                        <div class="text-sm font-bold text-slate-700">{{ val }}</div>
                     </div>
-                    
-                    <ul class="divide-y divide-slate-50 max-h-[300px] overflow-y-auto custom-scrollbar">
-                        <li v-for="log in sortedLogs" :key="log.id" class="p-4 hover:bg-slate-50 transition group">
-                            <div class="flex justify-between items-start mb-1">
-                                <div class="font-medium text-slate-700 text-sm flex items-center gap-2">
-                                    <span class="text-slate-400 text-xs"><i class="fa-regular fa-clock"></i></span>
-                                    {{ formatDate(log.startTime) }}
-                                    <span class="text-slate-300 text-xs mx-1">|</span>
-                                    <span class="text-slate-500 text-xs">{{ formatHour(log.startTime) }} - {{ formatHour(log.endTime) }}</span>
-                                </div>
-                                <div class="font-mono font-bold text-xs text-brand-accent bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
-                                    {{ formatDuration(log.duration) }}
-                                </div>
-                            </div>
-                            
-                            <!-- Exibição da Descrição -->
-                            <div v-if="log.description" class="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 italic">
-                                "{{ log.description }}"
-                            </div>
-                            <div v-else class="mt-1 text-xs text-slate-300 italic">
-                                Sem descrição
-                            </div>
-                        </li>
-                        
-                        <li v-if="sortedLogs.length === 0" class="py-10 text-center text-slate-400 text-sm flex flex-col items-center gap-3">
-                            <div class="bg-slate-50 p-4 rounded-full">
-                                <i class="fa-regular fa-folder-open text-2xl opacity-40"></i>
-                            </div>
-                            <p>Nenhuma atividade registrada ainda.</p>
-                        </li>
-                    </ul>
                 </div>
             </div>
         </main>
-
-        <footer class="text-center p-6 text-[10px] text-slate-400 border-t border-slate-200 mt-auto">
-            &copy; 2025 Sistema de Ponto v1.4 • Desenvolvido com Vue.js & Firebase
-        </footer>
 
         <!-- MODAL DE PARADA -->
         <div v-if="showStopModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
                 <div class="bg-brand-light p-4 flex items-center gap-3 text-white">
                     <i class="fa-solid fa-pen-to-square text-brand-accent"></i>
-                    <h3 class="font-bold">O que foi feito?</h3>
+                    <h3 class="font-bold">Encerrar Sessão</h3>
                 </div>
                 
                 <div class="p-6">
-                    <p class="text-sm text-slate-500 mb-3">Descreva brevemente a atividade realizada nesta sessão.</p>
-                    <textarea 
-                        v-model="workDescription"
-                        placeholder="Ex: Correção de bugs na home, Reunião de alinhamento..."
-                        class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700 text-sm resize-none h-24 mb-1"
-                        autofocus
-                    ></textarea>
-                    <div class="text-right text-xs text-slate-400 mb-4" :class="{'text-red-400': workDescription.length > 200}">
-                        {{ workDescription.length }}/200
-                    </div>
-
+                    <p class="text-sm text-slate-500 mb-3">O que foi feito?</p>
+                    <textarea v-model="workDescription" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm h-24 mb-4"></textarea>
+                    
                     <div class="flex gap-3">
-                        <button @click="cancelStop" class="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">
-                            Voltar
-                        </button>
-                        <button @click="confirmStop" class="flex-1 py-3 px-4 bg-brand-accent text-white font-bold rounded-xl hover:bg-blue-600 shadow-lg shadow-blue-200 transition">
-                            Salvar e Parar
-                        </button>
+                        <button @click="showStopModal = false" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200">Voltar</button>
+                        <button @click="confirmStop" class="flex-1 py-3 bg-brand-danger text-white font-bold rounded-xl hover:bg-red-600 shadow-lg">Confirmar</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TOAST NOTIFICATION -->
-        <div v-if="toast.show" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-medium z-50 transition-all duration-300 flex items-center gap-3 min-w-[300px] justify-center"
+        <div v-if="toast.show" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-medium z-50 transition-all flex items-center gap-2"
              :class="toast.type === 'error' ? 'bg-brand-danger' : 'bg-brand-dark'">
             <i :class="toast.type === 'error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-check-circle text-brand-success'"></i>
             {{ toast.message }}
         </div>
     </div>
 
-    <!-- Firebase e App Logic -->
+    <!-- Lógica da Aplicação -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
         // =========================================================================
-        // ÁREA DE CONFIGURAÇÃO (COLE SUAS CHAVES AQUI)
+        // CONFIGURAÇÃO FIREBASE
         // =========================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyBaof8kXvK3bcjaauonBQSLCGaaivZN4xU",
-            authDomain: "pontoeletronico-94d81.firebaseapp.com",
-            projectId: "pontoeletronico-94d81",
-            storageBucket: "pontoeletronico-94d81.firebasestorage.app",
-            messagingSenderId: "965066780166",
-            appId: "1:965066780166:web:37320da9bbf313d50edd87"
+            apiKey: "SUA_API_KEY_AQUI",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            projectId: "SEU_PROJECT_ID",
+            storageBucket: "SEU_PROJETO.firebasestorage.app",
+            messagingSenderId: "SEU_MESSAGING_ID",
+            appId: "SEU_APP_ID"
         };
-        // =========================================================================
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
-        signInAnonymously(auth).catch((error) => console.error("Auth Error:", error));
+        signInAnonymously(auth).catch(e => console.error(e));
 
         const { createApp, ref, computed, onMounted, watch } = Vue;
 
         createApp({
             setup() {
-                // Estados
+                // ESTADOS
                 const currentUser = ref(localStorage.getItem('ponto_user') || null);
+                
+                // Timer
                 const isTimerRunning = ref(false);
+                const isPaused = ref(false);
                 const startTime = ref(null);
+                const accumulatedPause = ref(0); // Tempo total pausado em segundos
+                const pauseStartTime = ref(null); // Timestamp de quando a pausa atual começou
                 const elapsedTime = ref(0);
                 const timerInterval = ref(null);
-                const logs = ref([]); 
-                const isLoading = ref(true);
-                const toast = ref({ show: false, message: '', type: 'success' });
-                const userStatuses = ref({}); // Status de todos
                 
-                // Estados do Modal
+                // Dados
+                const logs = ref([]);
+                const userStatuses = ref({});
+                
+                // UI
                 const showStopModal = ref(false);
                 const workDescription = ref('');
+                const toast = ref({ show: false, message: '', type: 'success' });
+                const activeTab = ref('personal');
 
-                // Computed: Tempo do timer
-                const formattedTime = computed(() => formatDuration(elapsedTime.value));
+                // Notas (Dontpad)
+                const generalNote = ref('');
+                const personalNote = ref('');
+                const savingGeneral = ref(false);
+                const savingPersonal = ref(false);
 
-                // Computed: Logs filtrados
-                const sortedLogs = computed(() => {
-                    if (!currentUser.value) return [];
-                    return logs.value
-                        .filter(log => log.user === currentUser.value)
-                        .sort((a, b) => b.startTime - a.startTime);
+                // ==========================
+                // COMPUTED
+                // ==========================
+                const formattedTime = computed(() => {
+                    const hours = Math.floor(elapsedTime.value / 3600);
+                    const minutes = Math.floor((elapsedTime.value % 3600) / 60);
+                    const seconds = elapsedTime.value % 60;
+                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 });
 
-                // Computed: Stats
-                const currentStats = computed(() => {
-                    return currentUser.value ? getStatsForUser(currentUser.value) : { today: '0m', week: '0m', month: '0m' };
-                });
+                const currentStats = computed(() => currentUser.value ? getStatsForUser(currentUser.value) : {});
 
-                // Helpers de estatísticas
-                const getStatsForUser = (username) => {
-                    const userLogs = logs.value.filter(l => l.user === username);
-                    const now = new Date();
-                    let todaySecs = 0, weekSecs = 0, monthSecs = 0;
-
-                    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-                    
-                    const dayOfWeek = now.getDay();
-                    const startOfWeek = new Date(now);
-                    startOfWeek.setDate(now.getDate() - dayOfWeek);
-                    startOfWeek.setHours(0,0,0,0);
-                    
-                    userLogs.forEach(log => {
-                        const logTime = log.startTime;
-                        if (logTime >= startOfDay) todaySecs += log.duration;
-                        if (logTime >= startOfWeek.getTime()) weekSecs += log.duration;
-                        if (logTime >= startOfMonth) monthSecs += log.duration;
-                    });
-
-                    return {
-                        today: formatStats(todaySecs),
-                        week: formatStats(weekSecs),
-                        month: formatStats(monthSecs)
-                    };
-                };
-
-                const isUserWorking = (username) => {
-                    return userStatuses.value[username]?.isWorking === true;
-                };
-
-                const selectUser = (user) => {
-                    currentUser.value = user;
-                    localStorage.setItem('ponto_user', user);
-                    syncTimerFromCloud(); // Sincroniza imediatamente ao logar
-                };
-
-                const logout = () => {
-                    // Nota: Não forçamos parar o timer no logout para permitir troca de device
-                    currentUser.value = null;
-                    localStorage.removeItem('ponto_user');
-                    // Para o timer local visualmente, mas o status remoto continua true
-                    if (timerInterval.value) clearInterval(timerInterval.value);
-                    isTimerRunning.value = false;
-                    elapsedTime.value = 0;
-                };
-
+                // ==========================
+                // HELPERS
+                // ==========================
                 const showToast = (msg, type = 'success') => {
                     toast.value = { show: true, message: msg, type: type };
                     setTimeout(() => toast.value.show = false, 3000);
                 };
 
-                const formatDuration = (totalSeconds) => {
-                    const hours = Math.floor(totalSeconds / 3600);
-                    const minutes = Math.floor((totalSeconds % 3600) / 60);
-                    const seconds = totalSeconds % 60;
-                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                const getStatsForUser = (username) => {
+                    const userLogs = logs.value.filter(l => l.user === username);
+                    const now = new Date();
+                    let today = 0, week = 0, month = 0;
+                    const startOfDay = new Date(now.setHours(0,0,0,0)).getTime();
+                    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).getTime();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+                    
+                    userLogs.forEach(l => {
+                        if (l.startTime >= startOfDay) today += l.duration;
+                        if (l.startTime >= startOfWeek) week += l.duration;
+                        if (l.startTime >= startOfMonth) month += l.duration;
+                    });
+                    
+                    const fmt = s => {
+                        const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+                        return h+m===0 ? '0h' : `${h}h ${m}m`;
+                    }
+                    return { today: fmt(today), week: fmt(week), month: fmt(month) };
                 };
 
-                const formatStats = (totalSeconds) => {
-                    const hours = Math.floor(totalSeconds / 3600);
-                    const minutes = Math.floor((totalSeconds % 3600) / 60);
-                    if (hours === 0 && minutes === 0) return '0h';
-                    return `${hours}h ${minutes}m`;
-                };
-
-                const formatDate = (timestamp) => new Date(timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                const formatHour = (timestamp) => timestamp ? new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-
-                // ==========================
-                // LÓGICA DO TIMER
-                // ==========================
+                const formatHour = (ts) => ts ? new Date(ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '--:--';
                 
-                const handleMainButtonClick = () => {
-                    if (!isTimerRunning.value) {
-                        startTimerLogic(Date.now());
-                    } else {
-                        workDescription.value = ''; 
-                        showStopModal.value = true;
+                const isUserWorking = (u) => userStatuses.value[u]?.isWorking;
+                const isUserPaused = (u) => userStatuses.value[u]?.isPaused;
+
+                // ==========================
+                // TIMER LOGIC
+                // ==========================
+                const updateRemoteStatus = async () => {
+                    if(!currentUser.value) return;
+                    await setDoc(doc(db, "status", currentUser.value), {
+                        isWorking: isTimerRunning.value,
+                        isPaused: isPaused.value,
+                        startTime: startTime.value,
+                        pauseStartTime: pauseStartTime.value,
+                        accumulatedPause: accumulatedPause.value,
+                        lastUpdate: serverTimestamp()
+                    });
+                };
+
+                const calculateElapsed = () => {
+                    if (!startTime.value) return 0;
+                    const now = Date.now();
+                    
+                    // Se estiver pausado agora, o tempo não corre além do inicio da pausa
+                    if (isPaused.value && pauseStartTime.value) {
+                         const timeUntilPause = (pauseStartTime.value - startTime.value) / 1000;
+                         return Math.floor(Math.max(0, timeUntilPause - accumulatedPause.value));
                     }
+                    
+                    // Se estiver rodando
+                    return Math.floor((now - startTime.value) / 1000) - accumulatedPause.value;
                 };
 
-                const cancelStop = () => showStopModal.value = false;
+                const tick = () => elapsedTime.value = calculateElapsed();
 
-                const confirmStop = () => {
-                    showStopModal.value = false;
-                    stopTimerLogic(workDescription.value);
-                };
-
-                const updateRemoteStatus = async (working, startTimestamp = null) => {
-                    if (!currentUser.value) return;
-                    try {
-                        await setDoc(doc(db, "status", currentUser.value), {
-                            isWorking: working,
-                            startTime: startTimestamp,
-                            lastUpdate: serverTimestamp()
-                        });
-                    } catch (e) {
-                        console.error("Erro status:", e);
-                    }
-                };
-
-                const startTimerLogic = (startTimestamp) => {
-                    // Evita iniciar se já estiver rodando
-                    if (isTimerRunning.value && startTime.value === startTimestamp) return;
-
+                const handleStartClick = () => {
+                    startTime.value = Date.now();
+                    accumulatedPause.value = 0;
                     isTimerRunning.value = true;
-                    startTime.value = startTimestamp;
+                    isPaused.value = false;
                     
-                    // Backup local + Atualização Remota
-                    localStorage.setItem(`ponto_start_${currentUser.value}`, startTimestamp);
-                    updateRemoteStatus(true, startTimestamp);
-
-                    // Limpa intervalo anterior se existir
-                    if (timerInterval.value) clearInterval(timerInterval.value);
-
-                    timerInterval.value = setInterval(() => {
-                        elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
-                    }, 1000);
+                    // Backup local
+                    localStorage.setItem(`ponto_${currentUser.value}`, JSON.stringify({
+                        startTime: startTime.value,
+                        accumulatedPause: 0,
+                        isPaused: false
+                    }));
+                    
+                    updateRemoteStatus();
+                    timerInterval.value = setInterval(tick, 1000);
                 };
 
-                const stopTimerLogic = async (descriptionText = "") => {
-                    const endTime = Date.now();
-                    const finalDuration = Math.floor((endTime - startTime.value) / 1000);
+                const togglePause = () => {
+                    if (isPaused.value) {
+                        // RETOMAR
+                        const pausedDurationSeconds = (Date.now() - pauseStartTime.value) / 1000;
+                        accumulatedPause.value += pausedDurationSeconds;
+                        isPaused.value = false;
+                        pauseStartTime.value = null;
+                        
+                        // Atualizar backup
+                        const backup = JSON.parse(localStorage.getItem(`ponto_${currentUser.value}`));
+                        backup.isPaused = false;
+                        backup.accumulatedPause = accumulatedPause.value;
+                        backup.pauseStartTime = null;
+                        localStorage.setItem(`ponto_${currentUser.value}`, JSON.stringify(backup));
+
+                    } else {
+                        // PAUSAR
+                        isPaused.value = true;
+                        pauseStartTime.value = Date.now();
+                        
+                        // Atualizar backup
+                        const backup = JSON.parse(localStorage.getItem(`ponto_${currentUser.value}`) || '{}');
+                        backup.isPaused = true;
+                        backup.pauseStartTime = pauseStartTime.value;
+                        localStorage.setItem(`ponto_${currentUser.value}`, JSON.stringify(backup));
+                    }
+                    updateRemoteStatus();
+                    tick(); // Atualiza UI imediatamente
+                };
+
+                const handleStopClick = () => {
+                    workDescription.value = '';
+                    showStopModal.value = true;
+                };
+
+                const confirmStop = async () => {
+                    showStopModal.value = false;
+                    const now = Date.now();
                     
-                    clearInterval(timerInterval.value);
-                    localStorage.removeItem(`ponto_start_${currentUser.value}`);
-                    isTimerRunning.value = false;
-                    elapsedTime.value = 0;
-                    
-                    // Avisa nuvem que parou
-                    updateRemoteStatus(false, null);
+                    // Calcula duração final exata
+                    let finalDuration = 0;
+                    if (isPaused.value) {
+                        // Se parou enquanto estava pausado, o fim é o início da pausa
+                        finalDuration = Math.floor(((pauseStartTime.value - startTime.value) / 1000) - accumulatedPause.value);
+                    } else {
+                        finalDuration = Math.floor(((now - startTime.value) / 1000) - accumulatedPause.value);
+                    }
 
                     if (finalDuration < 5) {
-                        showToast("Tempo muito curto (< 5s).", "error");
-                        return;
-                    }
-
-                    try {
+                        showToast("Muito curto (< 5s)", "error");
+                    } else {
                         await addDoc(collection(db, "time_logs"), {
                             user: currentUser.value,
                             startTime: startTime.value,
-                            endTime: endTime,
+                            endTime: now,
                             duration: finalDuration,
-                            description: descriptionText,
+                            description: workDescription.value,
                             createdAt: serverTimestamp()
                         });
                         showToast("Salvo com sucesso!");
-                    } catch (e) {
-                        console.error(e);
-                        showToast("Erro ao salvar.", "error");
+                    }
+
+                    // Reset
+                    clearInterval(timerInterval.value);
+                    isTimerRunning.value = false;
+                    isPaused.value = false;
+                    accumulatedPause.value = 0;
+                    elapsedTime.value = 0;
+                    localStorage.removeItem(`ponto_${currentUser.value}`);
+                    updateRemoteStatus(); // Limpa status na nuvem
+                };
+
+                // ==========================
+                // RECOVERY SYSTEM
+                // ==========================
+                const checkRecovery = () => {
+                    const backup = JSON.parse(localStorage.getItem(`ponto_${currentUser.value}`));
+                    if (backup && backup.startTime) {
+                        startTime.value = backup.startTime;
+                        accumulatedPause.value = backup.accumulatedPause || 0;
+                        isPaused.value = backup.isPaused || false;
+                        pauseStartTime.value = backup.pauseStartTime || null;
+                        isTimerRunning.value = true;
+                        
+                        timerInterval.value = setInterval(tick, 1000);
+                        tick();
                     }
                 };
 
-                // Lógica de Sincronização Multi-Device
-                const syncTimerFromCloud = () => {
-                    if (!currentUser.value) return;
-                    
-                    // Verifica status remoto
-                    const status = userStatuses.value[currentUser.value];
-                    
-                    if (status && status.isWorking && status.startTime) {
-                        // Se nuvem diz que está trabalhando, força timer local a rodar
-                        if (!isTimerRunning.value || startTime.value !== status.startTime) {
-                            console.log("Sincronizando timer da nuvem...");
-                            startTimerLogic(status.startTime);
+                // ==========================
+                // NOTAS (DONTPAD)
+                // ==========================
+                // Usando Lodash debounce para não salvar a cada letra, mas esperar 1s após parar de digitar
+                const saveGeneralNote = _.debounce(async () => {
+                    if(!generalNote.value) return;
+                    savingGeneral.value = true;
+                    await setDoc(doc(db, "notes", "general"), { content: generalNote.value }, { merge: true });
+                    savingGeneral.value = false;
+                }, 1000);
+
+                const savePersonalNote = _.debounce(async () => {
+                    if(!currentUser.value || !personalNote.value) return;
+                    savingPersonal.value = true;
+                    await setDoc(doc(db, "notes", currentUser.value), { content: personalNote.value }, { merge: true });
+                    savingPersonal.value = false;
+                }, 1000);
+
+                const fetchNotes = () => {
+                    // Monitorar Geral
+                    onSnapshot(doc(db, "notes", "general"), (doc) => {
+                        if(doc.exists() && doc.data().content !== generalNote.value) {
+                            // Só atualiza se for diferente para não sobrescrever enquanto digita
+                            // (Idealmente teria lógica de cursor, mas para 2 pessoas isso basta)
+                            if(!savingGeneral.value) generalNote.value = doc.data().content || '';
                         }
-                    } else {
-                        // Se nuvem diz que NÃO está trabalhando, e localmente estava, devemos parar?
-                        // Melhor não parar abruptamente para evitar conflitos de rede, 
-                        // mas se o usuário acabou de abrir a página, garante que está parado.
-                        if (!isTimerRunning.value) {
-                             // Tudo certo, já está parado
-                        }
+                    });
+
+                    // Monitorar Pessoal (se logado)
+                    if(currentUser.value) {
+                        onSnapshot(doc(db, "notes", currentUser.value), (doc) => {
+                            if(doc.exists() && !savingPersonal.value) {
+                                personalNote.value = doc.data().content || '';
+                            }
+                        });
                     }
+                };
+
+                // ==========================
+                // LIFECYCLE
+                // ==========================
+                const selectUser = (u) => {
+                    currentUser.value = u;
+                    localStorage.setItem('ponto_user', u);
+                    checkRecovery();
+                    fetchNotes();
+                };
+
+                const logout = () => {
+                    currentUser.value = null;
+                    localStorage.removeItem('ponto_user');
+                    isTimerRunning.value = false;
+                    clearInterval(timerInterval.value);
                 };
 
                 onMounted(() => {
-                    // Logs
-                    onSnapshot(collection(db, "time_logs"), (snapshot) => {
-                        logs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        isLoading.value = false;
+                    // Listener Logs
+                    onSnapshot(collection(db, "time_logs"), snap => logs.value = snap.docs.map(d => d.data()));
+                    // Listener Status
+                    onSnapshot(collection(db, "status"), snap => {
+                        const s = {};
+                        snap.forEach(d => s[d.id] = d.data());
+                        userStatuses.value = s;
                     });
-
-                    // Status Realtime
-                    onSnapshot(collection(db, "status"), (snapshot) => {
-                        const statuses = {};
-                        snapshot.forEach(doc => statuses[doc.id] = doc.data());
-                        userStatuses.value = statuses;
-                        
-                        // Sempre que o status mudar na nuvem, tenta sincronizar o timer local
-                        if (currentUser.value) syncTimerFromCloud();
-                    });
-                });
-                
-                // Observa mudança de usuário para tentar sincronizar
-                watch(currentUser, () => {
-                    syncTimerFromCloud();
+                    
+                    fetchNotes(); // Carrega nota geral mesmo deslogado
+                    if(currentUser.value) {
+                        checkRecovery();
+                        fetchNotes(); // Recarrega nota pessoal
+                    }
                 });
 
                 return {
-                    currentUser, isTimerRunning, formattedTime, sortedLogs, currentStats,
-                    selectUser, logout, handleMainButtonClick, startTime, isLoading,
-                    formatDate, formatHour, formatDuration, toast, getStatsForUser, isUserWorking,
-                    showStopModal, workDescription, cancelStop, confirmStop
+                    currentUser, selectUser, logout,
+                    isTimerRunning, isPaused, formattedTime, startTime,
+                    handleStartClick, togglePause, handleStopClick, confirmStop,
+                    showStopModal, workDescription, toast,
+                    currentStats, getStatsForUser, isUserWorking, isUserPaused, formatHour,
+                    // Notas
+                    activeTab, generalNote, personalNote, saveGeneralNote, savePersonalNote, savingGeneral, savingPersonal
                 };
             }
         }).mount('#app');
