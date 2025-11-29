@@ -247,6 +247,47 @@
                         <div class="text-sm font-bold text-slate-700">{{ val }}</div>
                     </div>
                 </div>
+
+                <!-- HISTÓRICO RECENTE COM DESCRIÇÃO (RESTAURADO) -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-list-ul"></i> Atividades Recentes
+                        </h3>
+                    </div>
+                    
+                    <ul class="divide-y divide-slate-50 max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <li v-for="log in sortedLogs" :key="log.id" class="p-4 hover:bg-slate-50 transition group">
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="font-medium text-slate-700 text-sm flex items-center gap-2">
+                                    <span class="text-slate-400 text-xs"><i class="fa-regular fa-clock"></i></span>
+                                    {{ formatDate(log.startTime) }}
+                                    <span class="text-slate-300 text-xs mx-1">|</span>
+                                    <span class="text-slate-500 text-xs">{{ formatHour(log.startTime) }} - {{ formatHour(log.endTime) }}</span>
+                                </div>
+                                <div class="font-mono font-bold text-xs text-brand-accent bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
+                                    {{ formatDuration(log.duration) }}
+                                </div>
+                            </div>
+                            
+                            <!-- Exibição da Descrição -->
+                            <div v-if="log.description" class="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 italic">
+                                "{{ log.description }}"
+                            </div>
+                            <div v-else class="mt-1 text-xs text-slate-300 italic">
+                                Sem descrição
+                            </div>
+                        </li>
+                        
+                        <li v-if="sortedLogs.length === 0" class="py-10 text-center text-slate-400 text-sm flex flex-col items-center gap-3">
+                            <div class="bg-slate-50 p-4 rounded-full">
+                                <i class="fa-regular fa-folder-open text-2xl opacity-40"></i>
+                            </div>
+                            <p>Nenhuma atividade registrada ainda.</p>
+                        </li>
+                    </ul>
+                </div>
+
             </div>
         </main>
 
@@ -344,6 +385,14 @@
 
                 const currentStats = computed(() => currentUser.value ? getStatsForUser(currentUser.value) : {});
 
+                // RESTAURADO: Computed para ordenar os logs
+                const sortedLogs = computed(() => {
+                    if (!currentUser.value) return [];
+                    return logs.value
+                        .filter(log => log.user === currentUser.value)
+                        .sort((a, b) => b.startTime - a.startTime);
+                });
+
                 // ==========================
                 // HELPERS
                 // ==========================
@@ -374,6 +423,14 @@
                 };
 
                 const formatHour = (ts) => ts ? new Date(ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '--:--';
+                // RESTAURADO: Formatadores auxiliares
+                const formatDate = (timestamp) => new Date(timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                const formatDuration = (totalSeconds) => {
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                };
                 
                 const isUserWorking = (u) => userStatuses.value[u]?.isWorking;
                 const isUserPaused = (u) => userStatuses.value[u]?.isPaused;
@@ -594,7 +651,9 @@
                     showStopModal, workDescription, toast,
                     currentStats, getStatsForUser, isUserWorking, isUserPaused, formatHour,
                     // Notas
-                    activeTab, generalNote, personalNote, saveGeneralNote, savePersonalNote, savingGeneral, savingPersonal
+                    activeTab, generalNote, personalNote, saveGeneralNote, savePersonalNote, savingGeneral, savingPersonal,
+                    // Histórico Restaurado
+                    sortedLogs, formatDate, formatDuration
                 };
             }
         }).mount('#app');
